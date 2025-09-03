@@ -232,21 +232,22 @@ class AdminPanel {
     async addProduct() {
         const form = document.getElementById('add-product-form');
         const formData = new FormData(form);
-        const product = {
-            name: formData.get('name'),
-            category: formData.get('category'),
-            price: parseFloat(formData.get('price')),
-            description: formData.get('description'),
-            quickReview: formData.get('quickReview'),
-            image: 'sideimage.jpg' // In real app, handle file upload
-        };
+        // Validate required fields
+        if (!formData.get('name') || !formData.get('category') || !formData.get('price') || !formData.get('image')) {
+            this.showNotification('Please fill in all required fields.', 'error');
+            return;
+        }
+        // Add status field
+        formData.append('status', 'active');
         try {
             const res = await fetch(`${API_BASE_URL}/products`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(product)
+                body: formData
             });
-            if (!res.ok) throw new Error('Failed to add product');
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to add product');
+            }
             this.showNotification('Product added successfully!', 'success');
             this.loadProducts();
             this.updateStats();
